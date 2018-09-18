@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+  seth-tp:
+    build:
+      context: .
+      dockerfile: ./processor/Dockerfile
+      args:
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    image: sawtooth-seth-tp:${ISOLATION_ID}
+    container_name: seth-tp
+    depends_on:
+      - validator
+    command: |
+      bash -c "
+        seth-tp -vv \
+          -C tcp://validator:4004
+      "
+
+  block-info-tp:
+    image: hyperledger/sawtooth-block-info-tp:1.0
+    container_name: block-info-tp
+    depends_on:
+      - validator
+    command: block-info-tp -vv --connect tcp://validator:4004
+
+  settings-tp:
+    image: hyperledger/sawtooth-settings-tp:1.0
+    container_name: settings-tp
+    depends_on:
+      - validator
+    command: settings-tp -vv --connect tcp://validator:4004
+
+  rest-api:
+    image: hyperledger/sawtooth-rest-api:1.0
+    container_name: rest-api
+    ports:
+      - '8080:8080'
+    depends_on:
+      - validator
+    entrypoint: |
+      sawtooth-rest-api -vv
+        --connect tcp://validator:4004
+        --bind rest-api:8080
+
+  validator:
+    image: hyperledger/sawtooth-validator:1.0
+    container_name: sawtooth-validator
+    ports:
+      - '4004:4004/tcp'
+      - 8800
+    command: |
+      bash -c "
+        if [ ! -f /etc/keys/validator.priv ]; then
+        sawadm keygen &&
+        sawset genesis \
+          -k /etc/sawtooth/keys/validator.priv \
+          -o config-genesis.batch &&
+        sawset proposal create \
+          -k /etc/sawtooth/keys/validator.priv \
+          sawtooth.validator.batch_injectors=block_info \
+          -o config.batch &&
+        sawadm genesis config-genesis.batch config.batch
+        fi;
+        sawtooth-validator -vv \
+            --endpoint tcp://validator:8800 \
+            --bind component:tcp://eth0:4004 \
+            --bind network:tcp://eth0:8800
+      "
+
+volumes:
+  sawtooth:

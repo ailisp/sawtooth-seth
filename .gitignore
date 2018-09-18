@@ -24,3 +24,8 @@
 
 # Don't lock dependencies
 Cargo.lock
+
+# Go deps when local build
+/cli-go/src/github.com
+/cli-go/src/golang.org
+/cli-go/pkg
