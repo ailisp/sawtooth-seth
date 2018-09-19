@@ -1,7 +1,5 @@
 #!/bin/bash
 
-project_root=$(dirname $0)
-
 function abspath() {
     # generate absolute path from relative path
     # $1     : relative filename
@@ -25,7 +23,8 @@ npm install \
     ethereumjs-abi \
     web3
 
-export GOPATH=$(abspath ${project_root})
+project_root=$(abspath $(dirname $0))
+export GOPATH=$project_root
 
 go get -u \
    github.com/btcsuite/btcd/btcec \
@@ -39,9 +38,10 @@ go get -u \
    github.com/satori/go.uuid \
    golang.org/x/crypto/ssh/terminal
 
+export PATH=$project_root:$PATH
+
 bash -c "go get github.com/hyperledger/sawtooth-sdk-go \
            && cd $GOPATH/src/github.com/hyperledger/sawtooth-sdk-go \
-           && alias sed=gsed \
            && go generate
 "
 

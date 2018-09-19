@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ "$(uname)" == "Darwin" ]; then
+    gsed "$@"
+else
+    /usr/bin/sed "$@"
+fi
